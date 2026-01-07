@@ -11,6 +11,7 @@ import Collaborations from "./pages/Collaborations";
 import Workspaces from "./pages/Workspaces";
 import Settings from "./pages/Settings";
 import GuestInvite from "./pages/GuestInvite";
+import Reschedule from "./pages/Reschedule";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/dashboard/workspaces" element={<Workspaces />} />
             <Route path="/dashboard/settings" element={<Settings />} />
             <Route path="/invite/:token" element={<GuestInvite />} />
+            <Route path="/reschedule/:id" element={<Reschedule />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
