@@ -9,11 +9,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle } from "lucide-react";
 import GuestIntakeForm from "@/components/guest/GuestIntakeForm";
+import GuestSchedulingForm from "@/components/guest/GuestSchedulingForm";
 
-type InviteStep = "loading" | "auth" | "intake" | "complete" | "error";
+type InviteStep = "loading" | "auth" | "intake" | "scheduling" | "complete" | "error";
 
 interface CollaborationData {
   id: string;
+  workspace_id: string;
+  scheduled_date: string | null;
+  prep_date: string | null;
+  reschedule_count: number;
   workspace: {
     name: string;
     welcome_message: string | null;
@@ -51,6 +56,10 @@ export default function GuestInvite() {
         .from("collaborations")
         .select(`
           id,
+          workspace_id,
+          scheduled_date,
+          prep_date,
+          reschedule_count,
           guest_profile_id,
           workspace:workspaces(name, welcome_message, welcome_video_url),
           host:profiles!collaborations_host_id_fkey(full_name)
@@ -66,6 +75,10 @@ export default function GuestInvite() {
       // Transform nested data
       const collabData: CollaborationData = {
         id: data.id,
+        workspace_id: data.workspace_id,
+        scheduled_date: data.scheduled_date,
+        prep_date: data.prep_date,
+        reschedule_count: data.reschedule_count || 0,
         workspace: Array.isArray(data.workspace) ? data.workspace[0] : data.workspace,
         host: Array.isArray(data.host) ? data.host[0] : data.host,
       };
@@ -102,7 +115,12 @@ export default function GuestInvite() {
         .single();
 
       if (profile?.user_id === user?.id && profile?.bio) {
-        setStep("complete");
+        // Intake complete - check if scheduling is done
+        if (collaboration.scheduled_date) {
+          setStep("complete");
+        } else {
+          setStep("scheduling");
+        }
         return;
       }
     }
@@ -178,6 +196,10 @@ export default function GuestInvite() {
       return;
     }
 
+    setStep("scheduling");
+  }
+
+  function handleSchedulingComplete() {
     setStep("complete");
   }
 
@@ -212,7 +234,7 @@ export default function GuestInvite() {
             <CheckCircle className="h-16 w-16 text-primary mx-auto mb-4" />
             <CardTitle>You're All Set!</CardTitle>
             <CardDescription>
-              Your intake is complete. The host will reach out with next steps for scheduling.
+              Your session is scheduled. You'll receive a confirmation email with details.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -334,6 +356,19 @@ export default function GuestInvite() {
             collaborationId={collaboration.id}
             existingProfileId={guestProfileId}
             onComplete={handleIntakeComplete}
+          />
+        )}
+
+        {step === "scheduling" && collaboration && (
+          <GuestSchedulingForm
+            collaborationId={collaboration.id}
+            workspaceId={collaboration.workspace_id}
+            existingSchedule={{
+              scheduled_date: collaboration.scheduled_date,
+              prep_date: collaboration.prep_date,
+              reschedule_count: collaboration.reschedule_count,
+            }}
+            onComplete={handleSchedulingComplete}
           />
         )}
       </div>
