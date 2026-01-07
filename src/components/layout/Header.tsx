@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LogIn, Menu, X } from "lucide-react";
 import { useState } from "react";
+import flowaborateLogo from "@/assets/flowaborate-logo.png";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -10,12 +11,7 @@ export function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <span className="text-sm font-bold text-primary-foreground">C</span>
-          </div>
-          <span className="font-serif text-xl font-semibold text-foreground">
-            Collaboration OS
-          </span>
+          <img src={flowaborateLogo} alt="Flowaborate" className="h-8" />
         </Link>
 
         {/* Desktop Navigation */}

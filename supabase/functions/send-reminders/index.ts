@@ -138,7 +138,7 @@ const handler = async (req: Request): Promise<Response> => {
             Authorization: `Bearer ${RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: "Podcast Workflow <onboarding@resend.dev>",
+            from: "Flowaborate <onboarding@resend.dev>",
             to: [guestProfile.email],
             subject: `Reminder: Recording Tomorrow - ${workspace?.name || "Podcast"}`,
             html: emailHtml,
