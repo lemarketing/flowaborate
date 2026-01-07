@@ -192,49 +192,54 @@ export default function Collaborations() {
         ) : collaborations && collaborations.length > 0 ? (
           <div className="space-y-4">
             {collaborations.map((collab) => (
-              <Card key={collab.id} className="transition-shadow hover:shadow-md">
-                <CardHeader className="flex flex-row items-start justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                      <CardTitle className="text-lg">
-                        {collab.guest_profile?.name || "Guest Pending"}
-                      </CardTitle>
-                      <StatusBadge status={collab.status} />
+              <Link key={collab.id} to={`/dashboard/collaborations/${collab.id}`}>
+                <Card className="transition-shadow hover:shadow-md cursor-pointer">
+                  <CardHeader className="flex flex-row items-start justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-3">
+                        <CardTitle className="text-lg">
+                          {collab.guest_profile?.name || "Guest Pending"}
+                        </CardTitle>
+                        <StatusBadge status={collab.status} />
+                      </div>
+                      <CardDescription>
+                        {collab.workspace?.name} • Created {format(new Date(collab.created_at), "MMM d, yyyy")}
+                      </CardDescription>
                     </div>
-                    <CardDescription>
-                      {collab.workspace?.name} • Created {format(new Date(collab.created_at), "MMM d, yyyy")}
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {collab.invite_token && collab.status === "invited" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copyInviteLink(collab.invite_token!)}
-                      >
-                        <Copy className="mr-2 h-4 w-4" />
-                        Copy Invite Link
-                      </Button>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                    {collab.scheduled_date && (
-                      <div>
-                        <span className="font-medium">Scheduled:</span>{" "}
-                        {format(new Date(collab.scheduled_date), "MMM d, yyyy 'at' h:mm a")}
-                      </div>
-                    )}
-                    {collab.guest_profile?.email && (
-                      <div>
-                        <span className="font-medium">Guest:</span>{" "}
-                        {collab.guest_profile.email}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      {collab.invite_token && collab.status === "invited" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            copyInviteLink(collab.invite_token!);
+                          }}
+                        >
+                          <Copy className="mr-2 h-4 w-4" />
+                          Copy Invite Link
+                        </Button>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                      {collab.scheduled_date && (
+                        <div>
+                          <span className="font-medium">Scheduled:</span>{" "}
+                          {format(new Date(collab.scheduled_date), "MMM d, yyyy 'at' h:mm a")}
+                        </div>
+                      )}
+                      {collab.guest_profile?.email && (
+                        <div>
+                          <span className="font-medium">Guest:</span>{" "}
+                          {collab.guest_profile.email}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         ) : (
