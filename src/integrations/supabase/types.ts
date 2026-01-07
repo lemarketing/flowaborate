@@ -14,16 +14,337 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      collaborations: {
+        Row: {
+          created_at: string
+          delivery_date: string | null
+          editing_deadline: string | null
+          editor_id: string | null
+          file_references: Json | null
+          guest_profile_id: string | null
+          host_id: string
+          id: string
+          invite_token: string | null
+          notes: string | null
+          posting_checklist: Json | null
+          prep_date: string | null
+          recorded_date: string | null
+          reschedule_count: number | null
+          scheduled_date: string | null
+          status: Database["public"]["Enums"]["collaboration_status"]
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_date?: string | null
+          editing_deadline?: string | null
+          editor_id?: string | null
+          file_references?: Json | null
+          guest_profile_id?: string | null
+          host_id: string
+          id?: string
+          invite_token?: string | null
+          notes?: string | null
+          posting_checklist?: Json | null
+          prep_date?: string | null
+          recorded_date?: string | null
+          reschedule_count?: number | null
+          scheduled_date?: string | null
+          status?: Database["public"]["Enums"]["collaboration_status"]
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_date?: string | null
+          editing_deadline?: string | null
+          editor_id?: string | null
+          file_references?: Json | null
+          guest_profile_id?: string | null
+          host_id?: string
+          id?: string
+          invite_token?: string | null
+          notes?: string | null
+          posting_checklist?: Json | null
+          prep_date?: string | null
+          recorded_date?: string | null
+          reschedule_count?: number | null
+          scheduled_date?: string | null
+          status?: Database["public"]["Enums"]["collaboration_status"]
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaborations_guest_profile_id_fkey"
+            columns: ["guest_profile_id"]
+            isOneToOne: false
+            referencedRelation: "guest_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaborations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_profiles: {
+        Row: {
+          bio: string | null
+          created_at: string
+          email: string
+          headshot_url: string | null
+          id: string
+          name: string
+          pronunciation_notes: string | null
+          social_links: Json | null
+          topics: string[] | null
+          updated_at: string
+          user_id: string | null
+          website_url: string | null
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          email: string
+          headshot_url?: string | null
+          id?: string
+          name: string
+          pronunciation_notes?: string | null
+          social_links?: Json | null
+          topics?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          email?: string
+          headshot_url?: string | null
+          id?: string
+          name?: string
+          pronunciation_notes?: string | null
+          social_links?: Json | null
+          topics?: string[] | null
+          updated_at?: string
+          user_id?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          assigned_role: Database["public"]["Enums"]["app_role"]
+          assigned_user_id: string | null
+          collaboration_id: string
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          is_completed: boolean | null
+          is_skipped: boolean | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_role: Database["public"]["Enums"]["app_role"]
+          assigned_user_id?: string | null
+          collaboration_id: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_completed?: boolean | null
+          is_skipped?: boolean | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_role?: Database["public"]["Enums"]["app_role"]
+          assigned_user_id?: string | null
+          collaboration_id?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          is_completed?: boolean | null
+          is_skipped?: boolean | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_collaboration_id_fkey"
+            columns: ["collaboration_id"]
+            isOneToOne: false
+            referencedRelation: "collaborations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workspace_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspaces: {
+        Row: {
+          created_at: string
+          external_storage_url: string | null
+          id: string
+          max_reschedules: number | null
+          name: string
+          owner_id: string
+          reschedule_cutoff_hours: number | null
+          status: Database["public"]["Enums"]["workspace_status"]
+          updated_at: string
+          welcome_message: string | null
+          welcome_video_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          external_storage_url?: string | null
+          id?: string
+          max_reschedules?: number | null
+          name: string
+          owner_id: string
+          reschedule_cutoff_hours?: number | null
+          status?: Database["public"]["Enums"]["workspace_status"]
+          updated_at?: string
+          welcome_message?: string | null
+          welcome_video_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          external_storage_url?: string | null
+          id?: string
+          max_reschedules?: number | null
+          name?: string
+          owner_id?: string
+          reschedule_cutoff_hours?: number | null
+          status?: Database["public"]["Enums"]["workspace_status"]
+          updated_at?: string
+          welcome_message?: string | null
+          welcome_video_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_access_collaboration: {
+        Args: { _collaboration_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_workspace_member: {
+        Args: { _user_id: string; _workspace_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "host" | "guest" | "editor"
+      collaboration_status:
+        | "invited"
+        | "intake_completed"
+        | "scheduled"
+        | "recorded"
+        | "editing"
+        | "ready"
+        | "completed"
+        | "cancelled"
+      workspace_status: "active" | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +471,19 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["host", "guest", "editor"],
+      collaboration_status: [
+        "invited",
+        "intake_completed",
+        "scheduled",
+        "recorded",
+        "editing",
+        "ready",
+        "completed",
+        "cancelled",
+      ],
+      workspace_status: ["active", "archived"],
+    },
   },
 } as const
