@@ -17,6 +17,13 @@ interface CollaborationData {
   workspace: {
     name: string;
   };
+  guest_profile: {
+    name: string;
+    email: string;
+  } | null;
+  host: {
+    full_name: string | null;
+  } | null;
 }
 
 export default function Reschedule() {
@@ -39,7 +46,9 @@ export default function Reschedule() {
           scheduled_date,
           prep_date,
           reschedule_count,
-          workspace:workspaces(name)
+          workspace:workspaces(name),
+          guest_profile:guest_profiles(name, email),
+          host:profiles!collaborations_host_id_fkey(full_name)
         `)
         .eq("id", id)
         .single();
@@ -57,6 +66,8 @@ export default function Reschedule() {
         prep_date: data.prep_date,
         reschedule_count: data.reschedule_count || 0,
         workspace: Array.isArray(data.workspace) ? data.workspace[0] : data.workspace,
+        guest_profile: Array.isArray(data.guest_profile) ? data.guest_profile[0] : data.guest_profile,
+        host: Array.isArray(data.host) ? data.host[0] : data.host,
       });
       setLoading(false);
     }
@@ -124,6 +135,10 @@ export default function Reschedule() {
         <GuestSchedulingForm
           collaborationId={collaboration.id}
           workspaceId={collaboration.workspace_id}
+          guestEmail={collaboration.guest_profile?.email}
+          guestName={collaboration.guest_profile?.name}
+          hostName={collaboration.host?.full_name || undefined}
+          workspaceName={collaboration.workspace.name}
           existingSchedule={{
             scheduled_date: collaboration.scheduled_date,
             prep_date: collaboration.prep_date,

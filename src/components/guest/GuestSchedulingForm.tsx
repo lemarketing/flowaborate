@@ -14,6 +14,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 interface GuestSchedulingFormProps {
   collaborationId: string;
   workspaceId: string;
+  guestEmail?: string;
+  guestName?: string;
+  hostName?: string;
+  workspaceName?: string;
   existingSchedule?: {
     scheduled_date: string | null;
     prep_date: string | null;
@@ -37,6 +41,10 @@ const TIME_SLOTS = [
 export default function GuestSchedulingForm({
   collaborationId,
   workspaceId,
+  guestEmail,
+  guestName,
+  hostName,
+  workspaceName,
   existingSchedule,
   onComplete,
   isRescheduling = false,
@@ -144,6 +152,27 @@ export default function GuestSchedulingForm({
         .eq("id", collaborationId);
 
       if (error) throw error;
+
+      // Send email notification
+      if (guestEmail && guestName) {
+        try {
+          await supabase.functions.invoke("send-notification", {
+            body: {
+              type: isRescheduling ? "rescheduled" : "scheduled",
+              collaboration_id: collaborationId,
+              guest_email: guestEmail,
+              guest_name: guestName,
+              host_name: hostName || "Your Host",
+              workspace_name: workspaceName || "Podcast",
+              scheduled_date: scheduledDateTime.toISOString(),
+              prep_date: prepDateTime?.toISOString() || null,
+            },
+          });
+        } catch (emailError) {
+          console.error("Failed to send notification email:", emailError);
+          // Don't fail the scheduling if email fails
+        }
+      }
 
       toast({
         title: isRescheduling ? "Session rescheduled!" : "Session scheduled!",

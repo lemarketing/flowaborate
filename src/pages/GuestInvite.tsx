@@ -38,6 +38,7 @@ export default function GuestInvite() {
   const [step, setStep] = useState<InviteStep>("loading");
   const [collaboration, setCollaboration] = useState<CollaborationData | null>(null);
   const [guestProfileId, setGuestProfileId] = useState<string | null>(null);
+  const [guestProfile, setGuestProfile] = useState<{ name: string; email: string } | null>(null);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signup");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -110,11 +111,12 @@ export default function GuestInvite() {
     if (guestProfileId) {
       const { data: profile } = await supabase
         .from("guest_profiles")
-        .select("user_id, bio")
+        .select("user_id, bio, name, email")
         .eq("id", guestProfileId)
         .single();
 
       if (profile?.user_id === user?.id && profile?.bio) {
+        setGuestProfile({ name: profile.name, email: profile.email });
         // Intake complete - check if scheduling is done
         if (collaboration.scheduled_date) {
           setStep("complete");
@@ -126,6 +128,43 @@ export default function GuestInvite() {
     }
 
     setStep("intake");
+  }
+
+  async function handleIntakeComplete(profileId: string) {
+    // Fetch the profile data for email notifications
+    const { data: profile } = await supabase
+      .from("guest_profiles")
+      .select("name, email")
+      .eq("id", profileId)
+      .single();
+
+    if (profile) {
+      setGuestProfile({ name: profile.name, email: profile.email });
+    }
+
+    // Link the guest profile to the collaboration
+    const { error } = await supabase
+      .from("collaborations")
+      .update({
+        guest_profile_id: profileId,
+        status: "intake_completed" as const,
+      })
+      .eq("id", collaboration?.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update collaboration status.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setStep("scheduling");
+  }
+
+  function handleSchedulingComplete() {
+    setStep("complete");
   }
 
   async function handleAuth(e: React.FormEvent) {
@@ -177,31 +216,6 @@ export default function GuestInvite() {
     }
   }
 
-  async function handleIntakeComplete(profileId: string) {
-    // Link the guest profile to the collaboration
-    const { error } = await supabase
-      .from("collaborations")
-      .update({
-        guest_profile_id: profileId,
-        status: "intake_completed" as const,
-      })
-      .eq("id", collaboration?.id);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update collaboration status.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setStep("scheduling");
-  }
-
-  function handleSchedulingComplete() {
-    setStep("complete");
-  }
 
   if (step === "loading" || authLoading) {
     return (
@@ -363,6 +377,10 @@ export default function GuestInvite() {
           <GuestSchedulingForm
             collaborationId={collaboration.id}
             workspaceId={collaboration.workspace_id}
+            guestEmail={guestProfile?.email}
+            guestName={guestProfile?.name}
+            hostName={collaboration.host?.full_name || undefined}
+            workspaceName={collaboration.workspace.name}
             existingSchedule={{
               scheduled_date: collaboration.scheduled_date,
               prep_date: collaboration.prep_date,
