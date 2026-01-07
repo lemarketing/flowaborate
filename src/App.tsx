@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Collaborations from "./pages/Collaborations";
+import CollaborationDetail from "./pages/CollaborationDetail";
 import Workspaces from "./pages/Workspaces";
 import Settings from "./pages/Settings";
 import GuestInvite from "./pages/GuestInvite";
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/collaborations" element={<Collaborations />} />
+            <Route path="/dashboard/collaborations/:id" element={<CollaborationDetail />} />
             <Route path="/dashboard/workspaces" element={<Workspaces />} />
             <Route path="/dashboard/settings" element={<Settings />} />
             <Route path="/invite/:token" element={<GuestInvite />} />
