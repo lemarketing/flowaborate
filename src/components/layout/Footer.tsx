@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import flowaborateLogo from "@/assets/flowaborate-logo.png";
 
 export function Footer() {
   return (
@@ -7,12 +8,7 @@ export function Footer() {
         <div className="grid gap-8 md:grid-cols-4">
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <span className="text-sm font-bold text-primary-foreground">C</span>
-              </div>
-              <span className="font-serif text-lg font-semibold text-foreground">
-                Collaboration OS
-              </span>
+              <img src={flowaborateLogo} alt="Flowaborate" className="h-8" />
             </Link>
             <p className="text-sm text-muted-foreground">
               The calm way to manage collaborative content creation.
@@ -88,7 +84,7 @@ export function Footer() {
 
         <div className="mt-12 border-t border-border pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Collaboration OS. Completely free to use.
+            © {new Date().getFullYear()} Flowaborate. Completely free to use.
           </p>
         </div>
       </div>

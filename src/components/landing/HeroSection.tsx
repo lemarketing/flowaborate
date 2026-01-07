@@ -37,7 +37,7 @@ export function HeroSection() {
         </h1>
 
         <p className="mt-6 max-w-2xl text-lg text-muted-foreground md:text-xl">
-          Collaboration OS handles the logistics of scheduling, intake, and
+          Flowaborate handles the logistics of scheduling, intake, and
           follow-through — so you can focus on creating great content together.
         </p>
 

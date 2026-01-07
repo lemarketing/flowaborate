@@ -20,6 +20,7 @@ import {
   Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import flowaborateLogo from "@/assets/flowaborate-logo.png";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -55,12 +56,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center gap-2 border-b border-border px-6">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <span className="text-sm font-bold text-primary-foreground">C</span>
-            </div>
-            <span className="font-serif text-lg font-semibold text-foreground">
-              Collaboration OS
-            </span>
+            <Link to="/dashboard" className="flex items-center">
+              <img src={flowaborateLogo} alt="Flowaborate" className="h-7" />
+            </Link>
           </div>
 
           {/* Navigation */}
@@ -102,11 +100,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Top Header */}
         <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:px-8">
           {/* Mobile Logo */}
-          <div className="flex items-center gap-2 lg:hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <span className="text-sm font-bold text-primary-foreground">C</span>
-            </div>
-          </div>
+          <Link to="/dashboard" className="flex items-center lg:hidden">
+            <img src={flowaborateLogo} alt="Flowaborate" className="h-6" />
+          </Link>
 
           {/* Right side */}
           <div className="ml-auto flex items-center gap-4">
