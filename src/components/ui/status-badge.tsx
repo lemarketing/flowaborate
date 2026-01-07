@@ -1,14 +1,7 @@
 import { cn } from "@/lib/utils";
+import { Database } from "@/integrations/supabase/types";
 
-export type CollaborationStatus =
-  | "invited"
-  | "intake_completed"
-  | "scheduled"
-  | "recorded"
-  | "editing"
-  | "ready"
-  | "completed"
-  | "cancelled";
+export type CollaborationStatus = Database["public"]["Enums"]["collaboration_status"];
 
 const statusConfig: Record<
   CollaborationStatus,

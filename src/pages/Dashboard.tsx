@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useCollaborationStats } from "@/hooks/useCollaborations";
+import { useWorkspaces } from "@/hooks/useWorkspaces";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { Plus, Users, Calendar, FileText, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +13,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function Dashboard() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const { data: stats, isLoading: statsLoading } = useCollaborationStats();
+  const { data: workspaces, isLoading: workspacesLoading } = useWorkspaces();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -32,12 +35,14 @@ export default function Dashboard() {
 
   if (!user) return null;
 
-  const stats = [
-    { label: "Active Collaborations", value: "0", icon: Users },
-    { label: "Scheduled This Week", value: "0", icon: Calendar },
-    { label: "In Editing", value: "0", icon: FileText },
-    { label: "Completed", value: "0", icon: CheckCircle2 },
+  const dashboardStats = [
+    { label: "Active Collaborations", value: stats?.active ?? 0, icon: Users },
+    { label: "Scheduled This Week", value: stats?.scheduled ?? 0, icon: Calendar },
+    { label: "In Editing", value: stats?.editing ?? 0, icon: FileText },
+    { label: "Completed", value: stats?.completed ?? 0, icon: CheckCircle2 },
   ];
+
+  const hasWorkspaces = workspaces && workspaces.length > 0;
 
   return (
     <DashboardLayout>
@@ -54,7 +59,7 @@ export default function Dashboard() {
 
         {/* Stats Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => (
+          {dashboardStats.map((stat) => (
             <Card key={stat.label}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -63,7 +68,11 @@ export default function Dashboard() {
                 <stat.icon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
+                {statsLoading ? (
+                  <Skeleton className="h-8 w-12" />
+                ) : (
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -86,12 +95,15 @@ export default function Dashboard() {
                 </div>
                 <h3 className="mt-4 font-medium text-foreground">All set for now</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  No pending actions. Create a new collaboration to get started.
+                  {hasWorkspaces 
+                    ? "No pending actions. Create a new collaboration to get started."
+                    : "Create a workspace first, then invite guests."
+                  }
                 </p>
                 <Button className="mt-4" asChild>
-                  <Link to="/dashboard/collaborations/new">
+                  <Link to={hasWorkspaces ? "/dashboard/collaborations" : "/dashboard/workspaces"}>
                     <Plus className="mr-2 h-4 w-4" />
-                    New Collaboration
+                    {hasWorkspaces ? "New Collaboration" : "Create Workspace"}
                   </Link>
                 </Button>
               </div>
@@ -126,26 +138,32 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-lg border border-border p-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                  1
+              <Link 
+                to="/dashboard/workspaces" 
+                className="rounded-lg border border-border p-4 transition-colors hover:bg-accent/50"
+              >
+                <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${hasWorkspaces ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                  {hasWorkspaces ? "✓" : "1"}
                 </div>
                 <h4 className="mt-3 font-medium">Create a Workspace</h4>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Set up your show or project workspace first.
                 </p>
-              </div>
-              <div className="rounded-lg border border-border p-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+              </Link>
+              <Link 
+                to="/dashboard/collaborations" 
+                className="rounded-lg border border-border p-4 transition-colors hover:bg-accent/50"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-bold text-muted-foreground">
                   2
                 </div>
                 <h4 className="mt-3 font-medium">Invite a Guest</h4>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Create a collaboration and send an invite link.
                 </p>
-              </div>
+              </Link>
               <div className="rounded-lg border border-border p-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-bold text-muted-foreground">
                   3
                 </div>
                 <h4 className="mt-3 font-medium">Track Progress</h4>
