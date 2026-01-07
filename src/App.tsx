@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Collaborations from "./pages/Collaborations";
 import Workspaces from "./pages/Workspaces";
 import Settings from "./pages/Settings";
+import GuestInvite from "./pages/GuestInvite";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/dashboard/collaborations" element={<Collaborations />} />
             <Route path="/dashboard/workspaces" element={<Workspaces />} />
             <Route path="/dashboard/settings" element={<Settings />} />
+            <Route path="/invite/:token" element={<GuestInvite />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
