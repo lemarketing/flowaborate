@@ -1,111 +1,70 @@
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  getStatusInfo, 
-  getAutomationTriggers, 
-  type CollaborationStatus 
-} from "@/lib/collaborationStateMachine";
+import { type CollaborationStatus } from "@/lib/collaborationStateMachine";
 
 interface StatusChangeNotificationParams {
   collaborationId: string;
-  oldStatus: string;
-  newStatus: string;
+  oldStatus: CollaborationStatus;
+  newStatus: CollaborationStatus;
 }
 
-export async function sendStatusChangeNotifications({
+/**
+ * Sends notifications when collaboration status changes.
+ * This is the ONLY entry point for status-change notifications.
+ * All notification logic is handled server-side in the notification-service edge function.
+ */
+export async function sendStatusChangeNotification({
   collaborationId,
   oldStatus,
   newStatus,
-}: StatusChangeNotificationParams): Promise<void> {
+}: StatusChangeNotificationParams): Promise<{ success: boolean; error?: string }> {
   // Don't send notifications if status didn't change
-  if (oldStatus === newStatus) return;
+  if (oldStatus === newStatus) {
+    return { success: true };
+  }
+
+  // Don't send notifications for terminal states (except when transitioning to them)
+  const terminalStatuses: CollaborationStatus[] = ["completed", "cancelled"];
+  if (terminalStatuses.includes(oldStatus)) {
+    return { success: true };
+  }
 
   try {
-    // Fetch collaboration details including guest, host, and workspace info
-    const { data: collab, error } = await supabase
-      .from("collaborations")
-      .select(`
-        id,
-        status,
-        scheduled_date,
-        guest_profile:guest_profiles(name, email),
-        host:profiles!collaborations_host_id_fkey(full_name, user_id),
-        workspace:workspaces(name)
-      `)
-      .eq("id", collaborationId)
-      .single();
+    const { data, error } = await supabase.functions.invoke("notification-service", {
+      body: {
+        type: "status_change",
+        collaboration_id: collaborationId,
+        old_status: oldStatus,
+        new_status: newStatus,
+      },
+    });
 
-    if (error || !collab) {
-      console.error("Failed to fetch collaboration for notification:", error);
-      return;
+    if (error) {
+      console.error("Failed to send status change notification:", error);
+      return { success: false, error: error.message };
     }
 
-    const guestProfile = Array.isArray(collab.guest_profile) 
-      ? collab.guest_profile[0] 
-      : collab.guest_profile;
-    const host = Array.isArray(collab.host) ? collab.host[0] : collab.host;
-    const workspace = Array.isArray(collab.workspace) ? collab.workspace[0] : collab.workspace;
-
-    // Get status info and automation triggers from centralized state machine
-    const statusInfo = getStatusInfo({ status: newStatus });
-    const triggers = getAutomationTriggers(
-      oldStatus as CollaborationStatus, 
-      newStatus as CollaborationStatus
-    );
-
-    // Get host email from auth
-    let hostEmail: string | null = null;
-    if (host?.user_id) {
-      const { data: authData } = await supabase.auth.admin?.getUserById?.(host.user_id) || {};
-      hostEmail = authData?.user?.email || null;
-    }
-
-    const basePayload = {
-      collaboration_id: collaborationId,
-      workspace_name: workspace?.name || "Collaboration",
-      old_status: oldStatus,
-      new_status: newStatus,
-      waiting_on: statusInfo.waitingOn,
-      action_required: statusInfo.action,
-      scheduled_date: collab.scheduled_date,
-    };
-
-    // Send notification to guest based on automation triggers
-    if (guestProfile?.email && triggers.notifyGuest) {
-      try {
-        await supabase.functions.invoke("send-notification", {
-          body: {
-            type: "status_change_guest",
-            guest_email: guestProfile.email,
-            guest_name: guestProfile.name,
-            host_name: host?.full_name,
-            ...basePayload,
-          },
-        });
-        console.log("Guest notification sent for status change:", newStatus);
-      } catch (e) {
-        console.error("Failed to send guest notification:", e);
-      }
-    }
-
-    // Send notification to host based on automation triggers
-    if (hostEmail && triggers.notifyHost) {
-      try {
-        await supabase.functions.invoke("send-notification", {
-          body: {
-            type: "status_change_host",
-            host_email: hostEmail,
-            host_name: host?.full_name,
-            guest_name: guestProfile?.name,
-            guest_email: guestProfile?.email,
-            ...basePayload,
-          },
-        });
-        console.log("Host notification sent for status change:", newStatus);
-      } catch (e) {
-        console.error("Failed to send host notification:", e);
-      }
-    }
+    console.log("Status change notification sent:", data);
+    return { success: true };
   } catch (error) {
-    console.error("Error sending status change notifications:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error sending status change notification:", message);
+    return { success: false, error: message };
   }
+}
+
+/**
+ * Helper to check if notifications should be sent for a status transition
+ */
+export function shouldSendNotification(
+  oldStatus: CollaborationStatus,
+  newStatus: CollaborationStatus
+): boolean {
+  // Don't notify if no change
+  if (oldStatus === newStatus) return false;
+
+  // Don't notify if already in terminal state
+  const terminalStatuses: CollaborationStatus[] = ["completed", "cancelled"];
+  if (terminalStatuses.includes(oldStatus)) return false;
+
+  return true;
 }

@@ -1,7 +1,7 @@
 project_id = "cbyweciprkklasewfvtq"
 
-[functions.send-notification]
+[functions.notification-service]
 verify_jwt = false
 
-[functions.send-reminders]
+[functions.scheduled-notifications]
 verify_jwt = false
