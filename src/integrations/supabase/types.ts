@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      collaboration_status_history: {
+        Row: {
+          changed_at: string
+          changed_by_user_id: string | null
+          collaboration_id: string
+          id: string
+          new_status: Database["public"]["Enums"]["collaboration_status"]
+          notes: string | null
+          old_status: Database["public"]["Enums"]["collaboration_status"] | null
+        }
+        Insert: {
+          changed_at?: string
+          changed_by_user_id?: string | null
+          collaboration_id: string
+          id?: string
+          new_status: Database["public"]["Enums"]["collaboration_status"]
+          notes?: string | null
+          old_status?:
+            | Database["public"]["Enums"]["collaboration_status"]
+            | null
+        }
+        Update: {
+          changed_at?: string
+          changed_by_user_id?: string | null
+          collaboration_id?: string
+          id?: string
+          new_status?: Database["public"]["Enums"]["collaboration_status"]
+          notes?: string | null
+          old_status?:
+            | Database["public"]["Enums"]["collaboration_status"]
+            | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaboration_status_history_collaboration_id_fkey"
+            columns: ["collaboration_id"]
+            isOneToOne: false
+            referencedRelation: "collaborations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collaborations: {
         Row: {
           created_at: string
