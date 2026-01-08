@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTasks } from "@/hooks/useTasks";
+import { useUpdateCollaboration } from "@/hooks/useCollaborations";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { TaskList } from "@/components/tasks/TaskList";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { WaitingOnBadge } from "@/components/collaborations/WaitingOnBadge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Calendar, User, Mail, Copy, ExternalLink } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowLeft, Calendar, User, Copy } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
@@ -40,11 +43,24 @@ interface CollaborationDetail {
   } | null;
 }
 
+const STATUS_OPTIONS = [
+  { value: "invited", label: "Invited" },
+  { value: "intake_completed", label: "Intake Completed" },
+  { value: "scheduled", label: "Scheduled" },
+  { value: "recorded", label: "Recorded" },
+  { value: "editing", label: "In Editing" },
+  { value: "edited", label: "Editing Complete" },
+  { value: "ready_to_publish", label: "Ready to Publish" },
+  { value: "completed", label: "Completed" },
+  { value: "delivered", label: "Delivered" },
+];
+
 export default function CollaborationDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const updateCollaboration = useUpdateCollaboration();
   
   const [collaboration, setCollaboration] = useState<CollaborationDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -112,6 +128,34 @@ export default function CollaborationDetail() {
     });
   };
 
+  const handleStatusChange = async (newStatus: string) => {
+    if (!collaboration || newStatus === collaboration.status) return;
+
+    const previousStatus = collaboration.status;
+    
+    try {
+      await updateCollaboration.mutateAsync({
+        id: collaboration.id,
+        status: newStatus as any,
+        previousStatus,
+      });
+
+      // Update local state
+      setCollaboration((prev) => prev ? { ...prev, status: newStatus } : null);
+
+      toast({
+        title: "Status updated",
+        description: `Collaboration status changed to ${STATUS_OPTIONS.find(s => s.value === newStatus)?.label}. Notifications sent.`,
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to update status",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <DashboardLayout>
@@ -163,14 +207,52 @@ export default function CollaborationDetail() {
             <p className="mt-1 text-muted-foreground">
               {collaboration.workspace.name} • Created {format(new Date(collaboration.created_at), "MMMM d, yyyy")}
             </p>
+            <div className="mt-2">
+              <WaitingOnBadge collaboration={collaboration} showAction />
+            </div>
           </div>
-          {collaboration.invite_token && collaboration.status === "invited" && (
-            <Button variant="outline" onClick={copyInviteLink}>
-              <Copy className="mr-2 h-4 w-4" />
-              Copy Invite Link
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {collaboration.invite_token && collaboration.status === "invited" && (
+              <Button variant="outline" onClick={copyInviteLink}>
+                <Copy className="mr-2 h-4 w-4" />
+                Copy Invite Link
+              </Button>
+            )}
+          </div>
         </div>
+
+        {/* Status Change */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Update Status</CardTitle>
+            <CardDescription>
+              Change the collaboration status to notify the relevant party
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <Select
+                value={collaboration.status}
+                onValueChange={handleStatusChange}
+                disabled={updateCollaboration.isPending}
+              >
+                <SelectTrigger className="w-[240px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {updateCollaboration.isPending && (
+                <span className="text-sm text-muted-foreground">Updating...</span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Main content - Tasks */}

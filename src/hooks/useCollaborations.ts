@@ -119,8 +119,9 @@ export function useUpdateCollaboration() {
   return useMutation({
     mutationFn: async ({
       id,
+      previousStatus,
       ...updates
-    }: CollaborationUpdate & { id: string }) => {
+    }: CollaborationUpdate & { id: string; previousStatus?: string }) => {
       const { data, error } = await supabase
         .from("collaborations")
         .update(updates)
@@ -129,11 +130,25 @@ export function useUpdateCollaboration() {
         .single();
 
       if (error) throw error;
-      return data as Collaboration;
+      
+      // Return both data and previous status for notification handling
+      return { data: data as Collaboration, previousStatus };
     },
-    onSuccess: (data) => {
+    onSuccess: async ({ data, previousStatus }) => {
       queryClient.invalidateQueries({ queryKey: ["collaborations"] });
       queryClient.invalidateQueries({ queryKey: ["collaboration", data.id] });
+      queryClient.invalidateQueries({ queryKey: ["collaborations-needing-action"] });
+      
+      // Send status change notifications if status changed
+      if (previousStatus && previousStatus !== data.status) {
+        // Import dynamically to avoid circular dependencies
+        const { sendStatusChangeNotifications } = await import("@/lib/notifications");
+        sendStatusChangeNotifications({
+          collaborationId: data.id,
+          oldStatus: previousStatus,
+          newStatus: data.status,
+        });
+      }
     },
   });
 }
