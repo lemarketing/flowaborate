@@ -142,10 +142,10 @@ export function useUpdateCollaboration() {
       // Send status change notifications if status changed
       if (previousStatus && previousStatus !== data.status) {
         // Import dynamically to avoid circular dependencies
-        const { sendStatusChangeNotifications } = await import("@/lib/notifications");
-        sendStatusChangeNotifications({
+        const { sendStatusChangeNotification } = await import("@/lib/notifications");
+        sendStatusChangeNotification({
           collaborationId: data.id,
-          oldStatus: previousStatus,
+          oldStatus: previousStatus as any,
           newStatus: data.status,
         });
       }
