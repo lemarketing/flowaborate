@@ -7,7 +7,8 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { Plus, Users, Copy, ExternalLink } from "lucide-react";
+import { WaitingOnBadge } from "@/components/collaborations/WaitingOnBadge";
+import { Plus, Users, Copy } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
@@ -223,19 +224,22 @@ export default function Collaborations() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                      {collab.scheduled_date && (
-                        <div>
-                          <span className="font-medium">Scheduled:</span>{" "}
-                          {format(new Date(collab.scheduled_date), "MMM d, yyyy 'at' h:mm a")}
-                        </div>
-                      )}
-                      {collab.guest_profile?.email && (
-                        <div>
-                          <span className="font-medium">Guest:</span>{" "}
-                          {collab.guest_profile.email}
-                        </div>
-                      )}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                        {collab.scheduled_date && (
+                          <div>
+                            <span className="font-medium">Scheduled:</span>{" "}
+                            {format(new Date(collab.scheduled_date), "MMM d, yyyy 'at' h:mm a")}
+                          </div>
+                        )}
+                        {collab.guest_profile?.email && (
+                          <div>
+                            <span className="font-medium">Guest:</span>{" "}
+                            {collab.guest_profile.email}
+                          </div>
+                        )}
+                      </div>
+                      <WaitingOnBadge collaboration={collab} showAction />
                     </div>
                   </CardContent>
                 </Card>

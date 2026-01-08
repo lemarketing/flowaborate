@@ -177,3 +177,32 @@ export function useCollaborationStats() {
     enabled: !!user,
   });
 }
+
+export function useCollaborationsNeedingAction() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["collaborations-needing-action", user?.id],
+    queryFn: async () => {
+      // Get collaborations that are not completed/delivered
+      const { data, error } = await supabase
+        .from("collaborations")
+        .select(`
+          id,
+          status,
+          scheduled_date,
+          recorded_date,
+          guest_profile_id,
+          workspace:workspaces(name),
+          guest_profile:guest_profiles(name, email)
+        `)
+        .not("status", "in", '("completed","delivered")')
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+}
