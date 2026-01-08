@@ -416,6 +416,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // ============================================
     // AUTHORIZATION CHECK - Only participants can trigger notifications
+    // Role-based authorization for notification types
     // ============================================
     if (!isCronJob && userId) {
       const guestProfile = Array.isArray(collab.guest_profile) ? collab.guest_profile[0] : collab.guest_profile;
@@ -427,6 +428,24 @@ const handler = async (req: Request): Promise<Response> => {
         console.error("User not authorized for this collaboration:", userId);
         return new Response(
           JSON.stringify({ error: "Forbidden" }),
+          { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      // Role-based authorization for notification types
+      // - status_change: Only hosts and editors can trigger
+      // - reminder: Only hosts can trigger manual reminders
+      // - exception: Only hosts can trigger exception notifications
+      const canTriggerNotification = (
+        (data.type === "status_change" && (isHost || isEditor)) ||
+        (data.type === "reminder" && isHost) ||
+        (data.type === "exception" && isHost)
+      );
+
+      if (!canTriggerNotification) {
+        console.error("User lacks permission for notification type:", { userId, type: data.type, isHost, isEditor, isGuest });
+        return new Response(
+          JSON.stringify({ error: "Insufficient permissions for this notification type" }),
           { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
         );
       }
