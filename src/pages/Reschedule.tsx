@@ -144,7 +144,7 @@ export default function Reschedule() {
             prep_date: collaboration.prep_date,
             reschedule_count: collaboration.reschedule_count,
           }}
-          onComplete={() => navigate("/dashboard")}
+          onComplete={() => navigate("/guest")}
           isRescheduling={true}
         />
       </div>

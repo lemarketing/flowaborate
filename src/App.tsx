@@ -12,6 +12,7 @@ import CollaborationDetail from "./pages/CollaborationDetail";
 import Workspaces from "./pages/Workspaces";
 import Settings from "./pages/Settings";
 import GuestInvite from "./pages/GuestInvite";
+import GuestDashboard from "./pages/GuestDashboard";
 import Reschedule from "./pages/Reschedule";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/dashboard/workspaces" element={<Workspaces />} />
             <Route path="/dashboard/settings" element={<Settings />} />
             <Route path="/invite/:token" element={<GuestInvite />} />
+            <Route path="/guest" element={<GuestDashboard />} />
             <Route path="/reschedule/:id" element={<Reschedule />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
