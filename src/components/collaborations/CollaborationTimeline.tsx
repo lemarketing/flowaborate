@@ -2,13 +2,15 @@ import { format } from "date-fns";
 import { Clock, ArrowRight } from "lucide-react";
 import { useStatusHistory } from "@/hooks/useStatusHistory";
 import { Skeleton } from "@/components/ui/skeleton";
+import { STATUS_LABELS, type CollaborationStatus } from "@/lib/collaborationStateMachine";
 
 interface CollaborationTimelineProps {
   collaborationId: string;
 }
 
 const formatStatus = (status: string) => {
-  return status
+  // Use centralized labels if available, fallback to formatting
+  return STATUS_LABELS[status as CollaborationStatus] || status
     .split("_")
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");

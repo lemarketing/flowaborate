@@ -1,5 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
-import { getWaitingOnInfo } from "@/components/collaborations/WaitingOnBadge";
+import { 
+  getStatusInfo, 
+  getAutomationTriggers, 
+  type CollaborationStatus 
+} from "@/lib/collaborationStateMachine";
 
 interface StatusChangeNotificationParams {
   collaborationId: string;
@@ -41,12 +45,12 @@ export async function sendStatusChangeNotifications({
     const host = Array.isArray(collab.host) ? collab.host[0] : collab.host;
     const workspace = Array.isArray(collab.workspace) ? collab.workspace[0] : collab.workspace;
 
-    // Get waiting on info for the new status
-    const waitingInfo = getWaitingOnInfo({
-      status: newStatus,
-      guest_profile_id: guestProfile?.email ? "exists" : null,
-      scheduled_date: collab.scheduled_date,
-    });
+    // Get status info and automation triggers from centralized state machine
+    const statusInfo = getStatusInfo({ status: newStatus });
+    const triggers = getAutomationTriggers(
+      oldStatus as CollaborationStatus, 
+      newStatus as CollaborationStatus
+    );
 
     // Get host email from auth
     let hostEmail: string | null = null;
@@ -55,21 +59,18 @@ export async function sendStatusChangeNotifications({
       hostEmail = authData?.user?.email || null;
     }
 
-    // If we can't get host email through admin, we'll skip host notification
-    // In production, you'd want to store email in profiles table
-
     const basePayload = {
       collaboration_id: collaborationId,
       workspace_name: workspace?.name || "Collaboration",
       old_status: oldStatus,
       new_status: newStatus,
-      waiting_on: waitingInfo.waitingOn,
-      action_required: waitingInfo.action,
+      waiting_on: statusInfo.waitingOn,
+      action_required: statusInfo.action,
       scheduled_date: collab.scheduled_date,
     };
 
-    // Send notification to guest if they need to take action or status changed significantly
-    if (guestProfile?.email && (waitingInfo.waitingOn === "guest" || shouldNotifyGuest(oldStatus, newStatus))) {
+    // Send notification to guest based on automation triggers
+    if (guestProfile?.email && triggers.notifyGuest) {
       try {
         await supabase.functions.invoke("send-notification", {
           body: {
@@ -86,8 +87,8 @@ export async function sendStatusChangeNotifications({
       }
     }
 
-    // Send notification to host if they need to take action or should be informed
-    if (hostEmail && (waitingInfo.waitingOn === "host" || shouldNotifyHost(oldStatus, newStatus))) {
+    // Send notification to host based on automation triggers
+    if (hostEmail && triggers.notifyHost) {
       try {
         await supabase.functions.invoke("send-notification", {
           body: {
@@ -107,18 +108,4 @@ export async function sendStatusChangeNotifications({
   } catch (error) {
     console.error("Error sending status change notifications:", error);
   }
-}
-
-// Determine if guest should be notified even if not waiting on them
-function shouldNotifyGuest(oldStatus: string, newStatus: string): boolean {
-  // Notify guest when recording is complete or content is delivered
-  const guestInterestStatuses = ["recorded", "edited", "completed", "delivered"];
-  return guestInterestStatuses.includes(newStatus);
-}
-
-// Determine if host should be notified even if not waiting on them
-function shouldNotifyHost(oldStatus: string, newStatus: string): boolean {
-  // Notify host when guest completes intake or schedules
-  const hostInterestStatuses = ["intake_completed", "scheduled"];
-  return hostInterestStatuses.includes(newStatus);
 }

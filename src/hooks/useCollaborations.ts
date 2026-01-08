@@ -199,7 +199,7 @@ export function useCollaborationsNeedingAction() {
   return useQuery({
     queryKey: ["collaborations-needing-action", user?.id],
     queryFn: async () => {
-      // Get collaborations that are not completed/delivered
+      // Get collaborations that are not in terminal states (completed/cancelled)
       const { data, error } = await supabase
         .from("collaborations")
         .select(`
@@ -211,7 +211,7 @@ export function useCollaborationsNeedingAction() {
           workspace:workspaces(name),
           guest_profile:guest_profiles(name, email)
         `)
-        .not("status", "in", '("completed","delivered")')
+        .not("status", "in", '("completed","cancelled")')
         .order("created_at", { ascending: false })
         .limit(10);
 
