@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Calendar, User, Copy, History } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { getStatusOptions, type CollaborationStatus } from "@/lib/collaborationStateMachine";
 
 interface CollaborationDetail {
   id: string;
@@ -44,16 +45,7 @@ interface CollaborationDetail {
   } | null;
 }
 
-const STATUS_OPTIONS = [
-  { value: "invited", label: "Invited" },
-  { value: "intake_completed", label: "Intake Completed" },
-  { value: "scheduled", label: "Scheduled" },
-  { value: "recorded", label: "Recorded" },
-  { value: "editing", label: "Editing" },
-  { value: "ready", label: "Ready" },
-  { value: "completed", label: "Completed" },
-  { value: "cancelled", label: "Cancelled" },
-];
+const STATUS_OPTIONS = getStatusOptions();
 
 export default function CollaborationDetail() {
   const { id } = useParams<{ id: string }>();
@@ -128,15 +120,15 @@ export default function CollaborationDetail() {
     });
   };
 
-  const handleStatusChange = async (newStatus: string) => {
+  const handleStatusChange = async (newStatus: CollaborationStatus) => {
     if (!collaboration || newStatus === collaboration.status) return;
 
-    const previousStatus = collaboration.status;
+    const previousStatus = collaboration.status as CollaborationStatus;
     
     try {
       await updateCollaboration.mutateAsync({
         id: collaboration.id,
-        status: newStatus as any,
+        status: newStatus,
         previousStatus,
       });
 
