@@ -6,13 +6,14 @@ import { useTasks } from "@/hooks/useTasks";
 import { useUpdateCollaboration } from "@/hooks/useCollaborations";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { TaskList } from "@/components/tasks/TaskList";
+import { CollaborationTimeline } from "@/components/collaborations/CollaborationTimeline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { WaitingOnBadge } from "@/components/collaborations/WaitingOnBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Calendar, User, Copy } from "lucide-react";
+import { ArrowLeft, Calendar, User, Copy, History } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 
@@ -48,11 +49,10 @@ const STATUS_OPTIONS = [
   { value: "intake_completed", label: "Intake Completed" },
   { value: "scheduled", label: "Scheduled" },
   { value: "recorded", label: "Recorded" },
-  { value: "editing", label: "In Editing" },
-  { value: "edited", label: "Editing Complete" },
-  { value: "ready_to_publish", label: "Ready to Publish" },
+  { value: "editing", label: "Editing" },
+  { value: "ready", label: "Ready" },
   { value: "completed", label: "Completed" },
-  { value: "delivered", label: "Delivered" },
+  { value: "cancelled", label: "Cancelled" },
 ];
 
 export default function CollaborationDetail() {
@@ -356,6 +356,19 @@ export default function CollaborationDetail() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Timeline */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <History className="h-4 w-4" />
+                  Status History
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CollaborationTimeline collaborationId={collaboration.id} />
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
