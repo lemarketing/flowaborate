@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LogIn, Menu, X } from "lucide-react";
 import { useState } from "react";
-import flowaborateLogo from "@/assets/flowaborate-logo.png";
+import flowaborateLogo from "@/assets/flowaborate-logo.svg";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

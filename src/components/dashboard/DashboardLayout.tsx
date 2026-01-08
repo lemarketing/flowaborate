@@ -20,7 +20,7 @@ import {
   Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import flowaborateLogo from "@/assets/flowaborate-logo.png";
+import flowaborateLogo from "@/assets/flowaborate-logo.svg";
 
 interface DashboardLayoutProps {
   children: ReactNode;

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import flowaborateLogo from "@/assets/flowaborate-logo.png";
+import flowaborateLogo from "@/assets/flowaborate-logo.svg";
 
 export function Footer() {
   return (
