@@ -2,15 +2,14 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useTasks } from "@/hooks/useTasks";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useUpdateCollaboration } from "@/hooks/useCollaborations";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { TaskList } from "@/components/tasks/TaskList";
 import { CollaborationTimeline } from "@/components/collaborations/CollaborationTimeline";
+import { ResponsibilityPanel } from "@/components/responsibility/ResponsibilityPanel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { WaitingOnBadge } from "@/components/collaborations/WaitingOnBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Calendar, User, Copy, History } from "lucide-react";
@@ -18,7 +17,7 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { getStatusOptions, type CollaborationStatus } from "@/lib/collaborationStateMachine";
 
-interface CollaborationDetail {
+interface CollaborationDetailData {
   id: string;
   status: string;
   scheduled_date: string | null;
@@ -29,6 +28,9 @@ interface CollaborationDetail {
   invite_token: string | null;
   reschedule_count: number;
   created_at: string;
+  updated_at: string;
+  host_id: string;
+  editor_id: string | null;
   workspace: {
     id: string;
     name: string;
@@ -39,6 +41,7 @@ interface CollaborationDetail {
     email: string;
     bio: string | null;
     headshot_url: string | null;
+    user_id: string | null;
   } | null;
   host: {
     full_name: string | null;
@@ -51,14 +54,13 @@ export default function CollaborationDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { isHost, isEditor } = useUserRole();
   const { toast } = useToast();
   const updateCollaboration = useUpdateCollaboration();
   
-  const [collaboration, setCollaboration] = useState<CollaborationDetail | null>(null);
+  const [collaboration, setCollaboration] = useState<CollaborationDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const { data: tasks, isLoading: tasksLoading } = useTasks(id);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -83,8 +85,11 @@ export default function CollaborationDetail() {
           invite_token,
           reschedule_count,
           created_at,
+          updated_at,
+          host_id,
+          editor_id,
           workspace:workspaces(id, name),
-          guest_profile:guest_profiles(id, name, email, bio, headshot_url),
+          guest_profile:guest_profiles(id, name, email, bio, headshot_url, user_id),
           host:profiles!collaborations_host_id_fkey(full_name)
         `)
         .eq("id", id)
@@ -101,7 +106,7 @@ export default function CollaborationDetail() {
         workspace: Array.isArray(data.workspace) ? data.workspace[0] : data.workspace,
         guest_profile: Array.isArray(data.guest_profile) ? data.guest_profile[0] : data.guest_profile,
         host: Array.isArray(data.host) ? data.host[0] : data.host,
-      } as CollaborationDetail);
+      } as CollaborationDetailData);
       setLoading(false);
     }
 
@@ -109,6 +114,22 @@ export default function CollaborationDetail() {
       fetchCollaboration();
     }
   }, [id, user, authLoading]);
+
+  // Determine user's role in this collaboration
+  const isCollaborationHost = user && collaboration?.host_id === user.id;
+  const isCollaborationEditor = user && collaboration?.editor_id === user.id;
+  const isCollaborationGuest = user && collaboration?.guest_profile?.user_id === user.id;
+
+  // Determine which role view to show
+  const viewRole: "host" | "guest" | "editor" = 
+    isCollaborationHost ? "host" :
+    isCollaborationEditor ? "editor" :
+    isCollaborationGuest ? "guest" :
+    isHost ? "host" : // Fallback to user's general role
+    isEditor ? "editor" : "guest";
+
+  // Only hosts can change status
+  const canChangeStatus = isCollaborationHost;
 
   const copyInviteLink = () => {
     if (!collaboration?.invite_token) return;
@@ -121,7 +142,7 @@ export default function CollaborationDetail() {
   };
 
   const handleStatusChange = async (newStatus: CollaborationStatus) => {
-    if (!collaboration || newStatus === collaboration.status) return;
+    if (!collaboration || newStatus === collaboration.status || !canChangeStatus) return;
 
     const previousStatus = collaboration.status as CollaborationStatus;
     
@@ -132,7 +153,6 @@ export default function CollaborationDetail() {
         previousStatus,
       });
 
-      // Update local state
       setCollaboration((prev) => prev ? { ...prev, status: newStatus } : null);
 
       toast({
@@ -154,7 +174,6 @@ export default function CollaborationDetail() {
         <div className="space-y-6">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-64" />
-          <Skeleton className="h-96" />
         </div>
       </DashboardLayout>
     );
@@ -194,104 +213,85 @@ export default function CollaborationDetail() {
               <h1 className="font-serif text-2xl font-bold text-foreground">
                 {collaboration.guest_profile?.name || "Guest Pending"}
               </h1>
-              <StatusBadge status={collaboration.status as any} />
+              <StatusBadge status={collaboration.status as CollaborationStatus} />
             </div>
             <p className="mt-1 text-muted-foreground">
               {collaboration.workspace.name} • Created {format(new Date(collaboration.created_at), "MMMM d, yyyy")}
             </p>
-            <div className="mt-2">
-              <WaitingOnBadge collaboration={collaboration} showAction />
+          </div>
+          {/* Host-only actions */}
+          {canChangeStatus && (
+            <div className="flex items-center gap-2">
+              {collaboration.invite_token && collaboration.status === "invited" && (
+                <Button variant="outline" onClick={copyInviteLink}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy Invite Link
+                </Button>
+              )}
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {collaboration.invite_token && collaboration.status === "invited" && (
-              <Button variant="outline" onClick={copyInviteLink}>
-                <Copy className="mr-2 h-4 w-4" />
-                Copy Invite Link
-              </Button>
-            )}
-          </div>
+          )}
         </div>
 
-        {/* Status Change */}
+        {/* Your Responsibility Panel - Role-specific */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Update Status</CardTitle>
+            <CardTitle className="text-base">Your Responsibility</CardTitle>
             <CardDescription>
-              Change the collaboration status to notify the relevant party
+              What you need to do for this collaboration
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-4">
-              <Select
-                value={collaboration.status}
-                onValueChange={handleStatusChange}
-                disabled={updateCollaboration.isPending}
-              >
-                <SelectTrigger className="w-[240px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {updateCollaboration.isPending && (
-                <span className="text-sm text-muted-foreground">Updating...</span>
-              )}
-            </div>
+            <ResponsibilityPanel
+              collaboration={{
+                ...collaboration,
+                workspace: collaboration.workspace,
+                guest_profile: collaboration.guest_profile,
+                host: collaboration.host,
+              }}
+              role={viewRole}
+            />
           </CardContent>
         </Card>
 
+        {/* Host-only: Status Change Control */}
+        {canChangeStatus && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Update Status</CardTitle>
+              <CardDescription>
+                Change the collaboration status to notify the relevant party
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <Select
+                  value={collaboration.status}
+                  onValueChange={handleStatusChange}
+                  disabled={updateCollaboration.isPending}
+                >
+                  <SelectTrigger className="w-[240px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {updateCollaboration.isPending && (
+                  <span className="text-sm text-muted-foreground">Updating...</span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* Main content - Tasks */}
-          <div className="lg:col-span-2">
-            <TaskList
-              collaborationId={collaboration.id}
-              tasks={tasks || []}
-              isLoading={tasksLoading}
-            />
-          </div>
-
-          {/* Sidebar - Details */}
-          <div className="space-y-6">
-            {/* Guest Info */}
-            {collaboration.guest_profile && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">Guest</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    {collaboration.guest_profile.headshot_url ? (
-                      <img
-                        src={collaboration.guest_profile.headshot_url}
-                        alt={collaboration.guest_profile.name}
-                        className="h-12 w-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                        <User className="h-6 w-6 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-medium">{collaboration.guest_profile.name}</p>
-                      <p className="text-sm text-muted-foreground">{collaboration.guest_profile.email}</p>
-                    </div>
-                  </div>
-                  {collaboration.guest_profile.bio && (
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {collaboration.guest_profile.bio}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Schedule Info */}
+          {/* Main content area */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Schedule Info - visible to all */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
@@ -335,8 +335,8 @@ export default function CollaborationDetail() {
               </CardContent>
             </Card>
 
-            {/* Notes */}
-            {collaboration.notes && (
+            {/* Notes - Host only */}
+            {collaboration.notes && canChangeStatus && (
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Notes</CardTitle>
@@ -348,8 +348,46 @@ export default function CollaborationDetail() {
                 </CardContent>
               </Card>
             )}
+          </div>
 
-            {/* Timeline */}
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Guest Info - Host and Editor only */}
+            {collaboration.guest_profile && (canChangeStatus || isCollaborationEditor) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Guest</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    {collaboration.guest_profile.headshot_url ? (
+                      <img
+                        src={collaboration.guest_profile.headshot_url}
+                        alt={collaboration.guest_profile.name}
+                        className="h-12 w-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                        <User className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium">{collaboration.guest_profile.name}</p>
+                      {canChangeStatus && (
+                        <p className="text-sm text-muted-foreground">{collaboration.guest_profile.email}</p>
+                      )}
+                    </div>
+                  </div>
+                  {collaboration.guest_profile.bio && (
+                    <p className="text-sm text-muted-foreground line-clamp-3">
+                      {collaboration.guest_profile.bio}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Timeline - All roles can see history */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
