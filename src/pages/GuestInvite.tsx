@@ -252,8 +252,8 @@ export default function GuestInvite() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate("/dashboard")} className="w-full">
-              Go to Dashboard
+            <Button onClick={() => navigate("/guest")} className="w-full">
+              Go to Your Dashboard
             </Button>
           </CardContent>
         </Card>
